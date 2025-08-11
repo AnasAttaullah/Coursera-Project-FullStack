@@ -1,0 +1,76 @@
+@page "/fetchproducts" // Route for this page
+
+
+<!-- Product List Header -->
+<h3>Product List</h3>
+
+<!-- Product List Rendering -->
+<ul>
+    @if (products != null)
+    {
+        // Render each product with name, price, and category
+        foreach (var product in products)
+        {
+            <li>@product.Name - $@product.Price - @product.Category.Name</li>
+        }
+    }
+    else
+    {
+        // Show loading message while fetching data
+        <li>Loading...</li>
+    }
+</ul>
+
+@inject HttpClient Http // Inject HttpClient for API calls
+
+@code {
+    // Array to hold fetched products
+    private Product[]? products;
+
+    // Fetch product data from backend API on component initialization
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var response = await Http.GetAsync("http://localhost:5253/api/productlist"); // Call backend API
+            if (response.IsSuccessStatusCode)
+            {
+                var json = await response.Content.ReadAsStringAsync(); // Read JSON response
+                                                                       // Deserialize JSON to Product[]
+                products = System.Text.Json.JsonSerializer.Deserialize<Product[]>(json, new System.Text.Json.JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+            }
+            else
+            {
+                // Handle non-success status codes
+                products = Array.Empty<Product>();
+            }
+        }
+        catch (Exception ex)
+        {
+            // Log or handle the exception as needed
+            products = Array.Empty<Product>();
+        }
+    }
+
+    // Model for product category
+    public class Category
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+    }
+
+    // Model for product
+    public class Product
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public double Price { get; set; }
+        public int Stock { get; set; }
+        public Category Category { get; set; }
+    }
+}
+
+}
